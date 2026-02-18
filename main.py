@@ -1,5 +1,42 @@
 import streamlit as st
-import plotly.graph_objects as go
+import base64
+
+# Función para cargar la fuente
+def load_font(font_path):
+    with open(font_path, "rb") as f:
+        font_data = base64.b64encode(f.read()).decode()
+    return font_data
+
+# Cargar las fuentes
+outfit_regular = load_font("assets/fonts/Outfit-Regular.ttf")
+outfit_bold = load_font("assets/fonts/Outfit-Bold.ttf")
+
+# Aplicar CSS con selectores más amplios
+st.markdown(f"""
+    <style>
+    @font-face {{
+        font-family: 'Outfit';
+        src: url(data:font/truetype;charset=utf-8;base64,{outfit_regular}) format('truetype');
+        font-weight: 400;
+    }}
+    @font-face {{
+        font-family: 'Outfit';
+        src: url(data:font/truetype;charset=utf-8;base64,{outfit_bold}) format('truetype');
+        font-weight: 700;
+    }}
+    
+    /* Aplicar a TODO */
+    html, body, [class*="css"], 
+    h1, h2, h3, h4, h5, h6,
+    p, div, span, label, button,
+    .stMarkdown, .stText {{
+        font-family: 'Outfit', sans-serif !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+
+st.image("assets/images/SomEnergia-Participa.png", use_container_width=True)
 
 """
 # Proyecto reparto
@@ -11,67 +48,83 @@ Lorem ipsum y algo más
 """
 st.write("")
 
-# Crear dos columnas con un espacio entre ellas
-col1, col2 = st.columns([2, 3], gap="large")
+# Inicializar valores si no existen
+if 'c1' not in st.session_state:
+    st.session_state.c1 = 0
+if 'c2' not in st.session_state:
+    st.session_state.c2 = 0
+if 'c3' not in st.session_state:
+    st.session_state.c3 = 0
 
-# Columna izquierda: sliders
-with col1:
-    criterio_1 = st.slider(
-        "Consumo",
-        min_value=0,
-        max_value=100,
-        value=(0),
-        key='key1',
-        help='tooltip c1'
-    )
+def ajustar_sliders(slider_modificado):
+    total = st.session_state.c1 + st.session_state.c2 + st.session_state.c3
 
-    if criterio_1 == 100:
-        crit1 = 1
-    else: crit1 = criterio_1
+    if total > 100:
+        exceso = total - 100
 
-    criterio_2 = st.slider(
-        "Superficie",
-        min_value=0,
-        max_value=100-crit1,
-        value=(0),
-        disabled=bool(criterio_1==100),
-        help='tooltip c2'
-    )
+        # Identificar los otros dos sliders
+        if slider_modificado == 'c1':
+            otros = ['c2', 'c3']
+        elif slider_modificado == 'c2':
+            otros = ['c1', 'c3']
+        else:  # c3
+            otros = ['c1', 'c2']
+        
+        valor1 = st.session_state[otros[0]]
+        valor2 = st.session_state[otros[1]]
+        
+        # Calcular cuánto necesitamos reducir en total
+        total_disponible = valor1 + valor2
+        
+        if total_disponible >= exceso:
+            # Hay suficiente para reducir proporcionalmente
+            if total_disponible > 0:
+                # Reducción proporcional
+                reduccion1 = int((valor1 / total_disponible) * exceso)
+                reduccion2 = exceso - reduccion1  # Asegurar que sume exacto
+                
+                st.session_state[otros[0]] = max(0, valor1 - reduccion1)
+                st.session_state[otros[1]] = max(0, valor2 - reduccion2)
+        else:
+            # No hay suficiente, poner ambos a 0
+            st.session_state[otros[0]] = 0
+            st.session_state[otros[1]] = 0
+            # Y ajustar el que se movió
+            st.session_state[slider_modificado] = 100
 
-    if criterio_1 + criterio_2 == 100:
-        crit2 = 1
-    else: crit2 = criterio_1 + criterio_2
+criterio_1 = st.slider(
+    "Criterio 1:",
+    min_value=0,
+    max_value=100,
+    key='c1',
+    on_change=ajustar_sliders,
+    args=('c1',),
+    help='tooltip 1'
+)
 
-    criterio_3 = st.slider(
-        "Aportación",
-        min_value=0,
-        max_value=100-crit2,
-        value=(0),
-        disabled=bool(criterio_1==100) or bool(criterio_1 + criterio_2==100),
-        help='tooltip c3'
-    )
+criterio_2 = st.slider(
+    "Criterio 2:",
+    min_value=0,
+    max_value=100,
+    key='c2',
+    on_change=ajustar_sliders,
+    args=('c2',),
+    help='tooltip 2'
+)
 
+criterio_3 = st.slider(
+    "Criterio 3:",
+    min_value=0,
+    max_value=100,
+    key='c3',
+    on_change=ajustar_sliders,
+    args=('c3',),
+    help='tooltip 3'
+)
 
-# Columna derecha: gráfico
+col1, col2, col3 = st.columns([1.25,1,1.25])
 with col2:
-    labels = ['Consumo', 'Superficie', 'Aportación', 'sin usar']
-    values = [criterio_1, criterio_2, criterio_3, 100-criterio_1-criterio_2-criterio_3]
-    colors = ["#F7FF05", '#FFA500', "#BAF17F", '#949494']
-
-    fig = go.Figure(data=[go.Pie(
-        labels=labels,
-        values=values,
-        marker=dict(colors=colors),
-        sort=False
-    )])
-    
-    # Ajustar márgenes del gráfico
-    fig.update_layout(
-        margin=dict(t=0, b=0, l=0, r=0),  # Elimina márgenes superiores
-        height=300  # Ajusta la altura si es necesario
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+    st.write(f"Suma de criterios: {criterio_1+criterio_2+criterio_3}%")
 
 """
 ## 2. Subir archivos
@@ -117,11 +170,17 @@ with col2:
             st.success('¡Archivo generado!')
 
 with col3:
-    st.download_button(
-        label="Descargar CSV",
-        data=st.session_state.get('csv_final'),
-        file_name="resultado.csv",
-        mime="text/csv",
-        disabled=csv_final not in st.session_state,
-        use_container_width=True
-    )
+    if 'csv_final' in st.session_state:
+        st.download_button(
+            label="Descargar CSV",
+            data=st.session_state['csv_final'],
+            file_name="resultado.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+    else:
+        st.button(
+            label="Descargar CSV",
+            disabled=True,
+            use_container_width=True
+        )
