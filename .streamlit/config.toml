@@ -1,2 +1,5 @@
-[runner]
-mainScriptPath = "Descripcion.py"
+[server]
+runOnSave = true
+
+[client]
+showErrorDetails = true
