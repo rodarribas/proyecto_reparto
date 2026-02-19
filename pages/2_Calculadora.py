@@ -36,7 +36,7 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
 
-st.image("assets/images/SomEnergia-Participa.png", use_container_width=True)
+st.image("assets/images/Cabecera_Linkedin.png", use_container_width=True)
 
 """
 # Proyecto reparto
@@ -44,7 +44,7 @@ Lorem ipsum y algo más
 """
 
 """
-## 1. Ponderación de criterios
+## 1. Ponderar criterios
 """
 st.write("")
 
@@ -93,7 +93,7 @@ def ajustar_sliders(slider_modificado):
             st.session_state[slider_modificado] = 100
 
 criterio_1 = st.slider(
-    "Criterio 1:",
+    "Consumo:",
     min_value=0,
     max_value=100,
     key='c1',
@@ -103,7 +103,7 @@ criterio_1 = st.slider(
 )
 
 criterio_2 = st.slider(
-    "Criterio 2:",
+    "Superficie:",
     min_value=0,
     max_value=100,
     key='c2',
@@ -113,7 +113,7 @@ criterio_2 = st.slider(
 )
 
 criterio_3 = st.slider(
-    "Criterio 3:",
+    "Aportación económica:",
     min_value=0,
     max_value=100,
     key='c3',
@@ -160,7 +160,7 @@ st.write("")
 col1, col2, col3, col4 = st.columns([1,2,2,1])
 
 with col2:
-    if st.button("Generar archivo", type='primary', use_container_width=True):
+    if st.button("Generar CSV", type='primary', use_container_width=True):
         if criterio_1+criterio_2+criterio_3 != 100:
             st.error("La suma de porcentajes de los criterios debe ser 100")
         else:
